@@ -150,9 +150,11 @@ def train_loop(list_of_batches, train_step, end_of_epoch=None):
         start_time = time.time()
         if type(batches) is dict:
             batches = np_dict_to_dict_generator(batches)
-
-        for batch in tqdm(batches):
-            train_step(batch)
+        with tqdm(batches) as pb:
+            update_description, desc_pb = desc_line()
+            with desc_pb:
+                for batch in pb:
+                    update_description(train_step(batch))
 
         if end_of_epoch:
             end_of_epoch(epoch, time.time() - start_time)
