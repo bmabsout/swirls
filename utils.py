@@ -49,8 +49,13 @@ def inv_sigmoid(x):
     return tf.math.log(x/(1-x))
 
 @tf.function
-def smooth_constraint(x, from_low, from_high, to_low=0.03, to_high=0.97):
-    return tf.sigmoid(transform(x, from_low, from_high, inv_sigmoid(to_low), inv_sigmoid(to_high)))
+def smooth_constraint(x, from_low, from_high, to_low=0.03, to_high=0.97, starts_linear=False):
+    """like transform but is sigmoidal outside the range instead of linear"""
+    scale = lambda x: x*2.0 - 1.0 if starts_linear else x
+    unscale = lambda x: (x+1.0)/2.0 if starts_linear else x
+    sigmoid_low = inv_sigmoid(unscale(to_low))
+    sigmoid_high = inv_sigmoid(unscale(to_high))
+    return scale(tf.sigmoid(transform(x, from_low, from_high, sigmoid_low, sigmoid_high)))
 
 
 pi = tf.constant(math.pi)
@@ -93,14 +98,6 @@ def latest_model():
 
 def extract_env_name(checkpoint_path):
     return Path(checkpoint_path).parent.parent.parent.name
-
-def inverse_sigmoid(y):
-    if y == 0.0:
-        return -math.inf
-    elif y == 1.0:
-        return math.inf
-    else:
-        return tf.math.log(y/(1-y))
 
 
 from collections import namedtuple
